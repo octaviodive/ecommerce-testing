@@ -1,8 +1,9 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from core.models import UserProfile, Item
+from core.models import UserProfile, Item, OrderItem
 from core.choices import CategoryChoices, LabelChoices, enum_to_choices
 
 
@@ -112,3 +113,31 @@ class ItemModelTest(TestCase):
         item = Item(title="Another Test Item", price=20.0, category=CategoryChoices.SHIRT, label=LabelChoices.SECONDARY, description="Another test item description.")
         item.save()
         self.assertEqual(item.slug, "another-test-item")
+
+
+class OrderItemModelTest(TestCase):
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username='testuser', password='password')
+        self.item = Item.objects.create(title='Test Item', price=100.0, discount_price=80.0)
+        self.order_item = OrderItem.objects.create(user=self.user, item=self.item, quantity=2)
+
+    def test_str_method(self):
+        self.assertEqual(str(self.order_item), '2 x Test Item')
+
+    def test_get_total_item_price(self):
+        self.assertEqual(self.order_item.get_total_item_price(), 200.0)
+
+    def test_get_total_discount_item_price(self):
+        self.assertEqual(self.order_item.get_total_discount_item_price(), 160.0)
+
+    def test_get_amount_saved(self):
+        self.assertEqual(self.order_item.get_amount_saved(), 40.0)
+
+    def test_get_final_price(self):
+        self.assertEqual(self.order_item.get_final_price(), 160.0)
+
+    def test_check_constraint(self):
+        order_item_invalid = OrderItem(user=self.user, item=self.item, quantity=-1)
+        with self.assertRaises(Exception):
+            order_item_invalid.save()

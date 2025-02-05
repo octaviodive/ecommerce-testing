@@ -53,4 +53,38 @@ class Item(models.Model):
         if not self.slug:
             self.slug = slugify(self.title)
         super().save(*args, **kwargs)
+        
+class OrderItem(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    ordered = models.BooleanField(default=False)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.quantity} x {self.item.title}"
+
+    def get_total_item_price(self):
+        return self.quantity * self.item.price
+
+    def get_total_discount_item_price(self):
+        if self.item.discount_price is None:
+            return 0.0
+        return self.quantity * self.item.discount_price
+
+    def get_amount_saved(self):
+        return self.get_total_item_price() - self.get_total_discount_item_price()
+
+    def get_final_price(self):
+        if self.item.discount_price:
+            return self.get_total_discount_item_price()
+        return self.get_total_item_price()
+    
+    class Meta:
+        constraints = [
+            models.CheckConstraint(check=models.Q(quantity__gte=1), name='quantity_gte_1')
+        ]
+
+    
                        
