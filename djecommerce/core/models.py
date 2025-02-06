@@ -1,10 +1,12 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import RegexValidator
 from django_countries.fields import CountryField
 from django.urls import reverse
 from django.core.validators import MinValueValidator
 from django.utils.text import slugify
 from .choices import AddressChoices, CategoryChoices, LabelChoices, enum_to_choices
+from django.core.validators import RegexValidator
 
 # Create your models here.
 
@@ -109,8 +111,56 @@ class Payment(models.Model):
     class Meta:
         verbose_name = "Payment"
         verbose_name_plural = "Payments"
-    
+#models       
 
+class Coupon(models.Model):
+    code = models.CharField(
+        max_length=15,
+        validators=[
+            RegexValidator(
+                regex='^[A-Z0-9]{4,15}$',
+                message='Code must be 4 to 15 characters long and contain only uppercase letters and numbers.'
+            )
+        ]
+    )
+    amount = models.FloatField()
 
+    def __str__(self):
+        return self.code
+
+class Order(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    ref_code = models.CharField(max_length=20, blank=True, null=True, unique=True)
+    items = models.ManyToManyField('OrderItem', related_name='orders')
+    start_date = models.DateTimeField(auto_now_add=True)
+    ordered_date = models.DateTimeField()
+    ordered = models.BooleanField(default=False)
+    shipping_address = models.ForeignKey(
+        'Address', related_name='shipping_orders', on_delete=models.SET_NULL, blank=True, null=True)
+    billing_address = models.ForeignKey(
+        'Address', related_name='billing_orders', on_delete=models.SET_NULL, blank=True, null=True)
+    payment = models.ForeignKey(
+        'Payment', on_delete=models.SET_NULL, blank=True, null=True)
+    coupon = models.ForeignKey(
+        'Coupon', on_delete=models.SET_NULL, blank=True, null=True)
+    being_delivered = models.BooleanField(default=False)
+    received = models.BooleanField(default=False)
+    refund_requested = models.BooleanField(default=False)
+    refund_granted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Order {self.ref_code} by {self.user.username} - Ordered: {self.ordered}"
+
+    def get_total(self):
+        total = 0
+        for order_item in self.items.all():
+            if order_item.item.discount_price:
+                total += order_item.item.discount_price * order_item.quantity
+            else:
+                total += order_item.item.price * order_item.quantity
+        if self.coupon:
+            total -= self.coupon.amount
+        return total
+
+        
     
-                       

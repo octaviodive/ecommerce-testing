@@ -4,9 +4,9 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from django_countries.fields import Country
 from django.core.files.uploadedfile import SimpleUploadedFile
-from core.models import Address, UserProfile, Item, OrderItem
+from django.utils import timezone
+from core.models import Address, UserProfile, Item, OrderItem, Payment, Coupon, Order
 from core.choices import AddressChoices, CategoryChoices, LabelChoices, enum_to_choices
-
 
 class UserProfileModelTest(TestCase):
     def setUp(self):
@@ -177,3 +177,126 @@ class AddressModelTest(TestCase):
     def test_default_value(self):
         address = Address.objects.get(id=self.address.id)
         self.assertTrue(address.default)
+        
+
+class PaymentModelTest(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        user = User.objects.create_user(username='testuser', password='12345')
+        Payment.objects.create(payment_charge_id='ch_1GpWpQ2eZvKYlo2C2WdzRA2e', user=user, amount=100.0)
+
+    def test_payment_creation(self):
+        payment = Payment.objects.get(id=1)
+        self.assertEqual(payment.payment_charge_id, 'ch_1GpWpQ2eZvKYlo2C2WdzRA2e')
+        self.assertEqual(payment.user.username, 'testuser')
+        self.assertEqual(payment.amount, 100.0)
+
+    def test_payment_str(self):
+        payment = Payment.objects.get(id=1)
+        self.assertEqual(str(payment), 'testuser - 100.0')
+
+#test
+
+class CouponModelTest(TestCase):
+    
+    def test_coupon_code_validation(self):
+        # Valid coupon codes
+        valid_codes = ['ABC123', '1234', 'XYZ7890', '123456789012345']
+        for code in valid_codes:
+            coupon = Coupon(code=code, amount=10.0)
+            try:
+                coupon.full_clean()  # This will run model validations
+            except ValidationError:
+                self.fail(f'Validation failed for valid code: {code}')
+        
+        # Invalid coupon codes
+        invalid_codes = ['abc123', '123', 'XYZ78901!', 'TOOLONGCOUPONCODE']
+        for code in invalid_codes:
+            coupon = Coupon(code=code, amount=10.0)
+            with self.assertRaises(ValidationError, msg=f'Validation did not raise for invalid code: {code}'):
+                coupon.full_clean()  # This will run model validations
+
+    def test_coupon_amount(self):
+        # Valid amounts
+        valid_amounts = [0.0, 10.0, 99999999.99]
+        for amount in valid_amounts:
+            coupon = Coupon(code='VALIDCODE', amount=amount)
+            try:
+                coupon.full_clean()  # This will run model validations
+            except ValidationError:
+                self.fail(f'Validation failed for valid amount: {amount}')
+        
+        # Invalid amounts (optional: add this if you are using DecimalField with validators)
+        # invalid_amounts = [-1.0, 100000000.0]
+        # for amount in invalid_amounts:
+        #     coupon = Coupon(code='VALIDCODE', amount=amount)
+        #     with self.assertRaises(ValidationError, msg=f'Validation did not raise for invalid amount: {amount}'):
+        #         coupon.full_clean()  # This will run model validations
+
+    def test_coupon_str_method(self):
+        coupon = Coupon(code='VALIDCODE', amount=10.0)
+        self.assertEqual(str(coupon), 'VALIDCODE')
+
+class OrderModelTest(TestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='testpassword')
+        self.address = Address.objects.create(
+            user=self.user,
+            street_address='123 Test St', 
+            apartment_address='1A', 
+            country='US', 
+            zip='12345'
+        )
+        self.payment = Payment.objects.create(
+            payment_charge_id='12345',
+            user=self.user,
+            amount=100.00
+        )
+        self.coupon = Coupon.objects.create(
+            code='TESTCOUPON',
+            amount=10.00
+        )
+        self.order = Order.objects.create(
+            user=self.user,
+            ref_code='ABC123',
+            ordered_date=timezone.now(),
+            shipping_address=self.address,
+            billing_address=self.address,
+            payment=self.payment,
+            coupon=self.coupon,
+            ordered=True
+        )
+
+    def test_order_creation(self):
+        self.assertEqual(self.order.user.username, 'testuser')
+        self.assertEqual(self.order.ref_code, 'ABC123')
+        self.assertTrue(self.order.ordered)
+        self.assertEqual(str(self.order), f"Order ABC123 by testuser - Ordered: True")
+
+    def test_get_total(self):
+        image_file = SimpleUploadedFile(name='test_image.jpg', content=b'', content_type='image/jpeg')
+        item = Item.objects.create(
+            title='Test Item',
+            price=50.00,
+            discount_price=40.00,
+            category=CategoryChoices.SHIRT.value[0],
+            label=LabelChoices.PRIMARY.value[0],
+            slug='test-item',
+            description='A test item.',
+            image=image_file
+        )
+        order_item = OrderItem.objects.create(
+            user=self.user,
+            ordered=True,
+            item=item,
+            quantity=2
+        )
+        self.order.items.add(order_item)
+        self.assertEqual(self.order.get_total(), 70.00)
+
+        
+
+
