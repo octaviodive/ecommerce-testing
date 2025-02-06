@@ -1,23 +1,17 @@
 from django.db import models
 from django.conf import settings
+from django_countries.fields import CountryField
 from django.urls import reverse
 from django.core.validators import MinValueValidator
 from django.utils.text import slugify
-from .choices import CategoryChoices, LabelChoices, enum_to_choices
+from .choices import AddressChoices, CategoryChoices, LabelChoices, enum_to_choices
 
 # Create your models here.
-
-
-ADDRESS_CHOICES = (
-    ('B', 'Billing'),
-    ('S', 'Shipping'),
-)
-
 
 class UserProfile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    stripe_customer_id = models.CharField(max_length=50, blank=True, null=True)
+    payment_customer_id = models.CharField(max_length=50, blank=True, null=True)
     one_click_purchasing = models.BooleanField(default=False)
 
     def __str__(self):
@@ -85,6 +79,38 @@ class OrderItem(models.Model):
         constraints = [
             models.CheckConstraint(check=models.Q(quantity__gte=1), name='quantity_gte_1')
         ]
+
+
+class Address(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="User")
+    street_address = models.CharField(max_length=100, verbose_name="Street Address")
+    apartment_address = models.CharField(max_length=100, verbose_name="Apartment Address")
+    country = CountryField(multiple=False, verbose_name="Country")
+    zip = models.CharField(max_length=20, verbose_name="ZIP Code")
+    address_type = models.CharField(max_length=1, choices=enum_to_choices(AddressChoices), verbose_name="Address Type")
+    default = models.BooleanField(default=False, verbose_name="Default")
+
+    def __str__(self):
+        return f"{self.user.username} - {self.get_address_type_display()}"
+
+    class Meta:
+        verbose_name_plural =  'Addresses'
+
+
+class Payment(models.Model):
+    payment_charge_id = models.CharField(max_length=50, verbose_name="Payment Charge ID")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="User")
+    amount = models.FloatField(verbose_name="Amount")
+    timestamp = models.DateTimeField(auto_now_add=True, verbose_name="Timestamp")
+
+    def __str__(self):
+        return f"{self.user.username} - {self.amount}"
+
+    class Meta:
+        verbose_name = "Payment"
+        verbose_name_plural = "Payments"
+    
+
 
     
                        

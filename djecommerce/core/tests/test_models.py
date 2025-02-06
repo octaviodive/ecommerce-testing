@@ -2,10 +2,10 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+from django_countries.fields import Country
 from django.core.files.uploadedfile import SimpleUploadedFile
-from core.models import UserProfile, Item, OrderItem
-from core.choices import CategoryChoices, LabelChoices, enum_to_choices
-
+from core.models import Address, UserProfile, Item, OrderItem
+from core.choices import AddressChoices, CategoryChoices, LabelChoices, enum_to_choices
 
 
 class UserProfileModelTest(TestCase):
@@ -25,10 +25,10 @@ class UserProfileModelTest(TestCase):
     def test_default_one_click_purchasing(self):
         self.assertFalse(self.user_profile.one_click_purchasing)
 
-    def test_stripe_customer_id(self):
-        self.user_profile.stripe_customer_id = 'cus_12345'
+    def test_payment_customer_id (self):
+        self.user_profile.payment_customer_id = 'cus_12345'
         self.user_profile.save()
-        self.assertEqual(self.user_profile.stripe_customer_id, 'cus_12345')
+        self.assertEqual(self.user_profile.payment_customer_id, 'cus_12345')
    
         
 class ItemModelTest(TestCase):
@@ -141,3 +141,39 @@ class OrderItemModelTest(TestCase):
         order_item_invalid = OrderItem(user=self.user, item=self.item, quantity=-1)
         with self.assertRaises(Exception):
             order_item_invalid.save()
+
+
+
+User = get_user_model()
+
+class AddressModelTest(TestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='password')
+        self.address = Address.objects.create(
+            user=self.user,
+            street_address='123 Test St',
+            apartment_address='Apt 1',
+            country='US',
+            zip='12345',
+            address_type=AddressChoices.SHIPPING.value[0],
+            default=True
+        )
+
+    def test_address_creation(self):
+        address = Address.objects.get(id=self.address.id)
+        self.assertEqual(address.user, self.user)
+        self.assertEqual(address.street_address, '123 Test St')
+        self.assertEqual(address.apartment_address, 'Apt 1')
+        self.assertEqual(address.country, Country(code='US'))
+        self.assertEqual(address.zip, '12345')
+        self.assertEqual(address.address_type, AddressChoices.SHIPPING.value[0])
+        self.assertTrue(address.default)
+
+    def test_address_str(self):
+        address = Address.objects.get(id=self.address.id)
+        self.assertEqual(str(address), 'testuser - Shipping')
+
+    def test_default_value(self):
+        address = Address.objects.get(id=self.address.id)
+        self.assertTrue(address.default)
