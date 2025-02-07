@@ -4,6 +4,7 @@ from django.core.validators import RegexValidator
 from django_countries.fields import CountryField
 from django.urls import reverse
 from django.core.validators import MinValueValidator
+from django.utils import timezone
 from django.utils.text import slugify
 from .choices import AddressChoices, CategoryChoices, LabelChoices, enum_to_choices
 from django.core.validators import RegexValidator
@@ -18,6 +19,7 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+
 
 class Item(models.Model):
     title = models.CharField(max_length=100)
@@ -49,6 +51,7 @@ class Item(models.Model):
         if not self.slug:
             self.slug = slugify(self.title)
         super().save(*args, **kwargs)
+  
         
 class OrderItem(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -111,7 +114,7 @@ class Payment(models.Model):
     class Meta:
         verbose_name = "Payment"
         verbose_name_plural = "Payments"
-#models       
+       
 
 class Coupon(models.Model):
     code = models.CharField(
@@ -128,12 +131,13 @@ class Coupon(models.Model):
     def __str__(self):
         return self.code
 
+
 class Order(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     ref_code = models.CharField(max_length=20, blank=True, null=True, unique=True)
     items = models.ManyToManyField('OrderItem', related_name='orders')
     start_date = models.DateTimeField(auto_now_add=True)
-    ordered_date = models.DateTimeField()
+    ordered_date = models.DateTimeField(default=timezone.now)
     ordered = models.BooleanField(default=False)
     shipping_address = models.ForeignKey(
         'Address', related_name='shipping_orders', on_delete=models.SET_NULL, blank=True, null=True)
@@ -162,5 +166,14 @@ class Order(models.Model):
             total -= self.coupon.amount
         return total
 
+
+class Refund(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    reason = models.TextField()
+    accepted = models.BooleanField(default=False)
+    email = models.EmailField()
+
+    def __str__(self):
+        return f"{self.pk}"
         
     

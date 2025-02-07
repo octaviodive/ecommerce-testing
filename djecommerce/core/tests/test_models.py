@@ -5,9 +5,11 @@ from django.contrib.auth import get_user_model
 from django_countries.fields import Country
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
-from core.models import Address, UserProfile, Item, OrderItem, Payment, Coupon, Order
+from core.models import Address, UserProfile, Item, OrderItem, Payment, Coupon, Order, Refund
 from core.choices import AddressChoices, CategoryChoices, LabelChoices, enum_to_choices
 
+
+User = get_user_model()
 class UserProfileModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create(username='testuser', password='password123')
@@ -297,6 +299,33 @@ class OrderModelTest(TestCase):
         self.order.items.add(order_item)
         self.assertEqual(self.order.get_total(), 70.00)
 
-        
+
+class RefundModelTests(TestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        self.order = Order.objects.create(user=self.user, ordered_date=timezone.now(), ordered=True)
+        self.refund = Refund.objects.create(
+            order=self.order,
+            reason="Product was defective",
+            accepted=False,
+            email="testuser@example.com"
+        )
+
+    def test_refund_creation(self):
+        self.assertIsInstance(self.refund, Refund)
+        self.assertEqual(self.refund.reason, "Product was defective")
+        self.assertEqual(self.refund.accepted, False)
+        self.assertEqual(self.refund.email, "testuser@example.com")
+
+    def test_refund_string_representation(self):
+        self.assertEqual(str(self.refund), f"{self.refund.pk}")
+
+    def test_refund_acceptance(self):
+        self.refund.accepted = True
+        self.refund.save()
+        self.assertEqual(self.refund.accepted, True)
+
+
 
 
