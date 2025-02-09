@@ -135,3 +135,20 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
+
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",  # Use local-memory cache backend
+        "LOCATION": "unique-snowflake",  # Unique identifier for the cache
+    }
+}
+
+CACHES['default']['OPTIONS'] = {
+    'MAX_ENTRIES': 1000,  # Maximum number of cache entries
+    'CULL_FREQUENCY': 3,  # Fraction of entries to be culled when max entries are reached
+}
+
+
+
+

@@ -1,6 +1,8 @@
-from django.shortcuts import render
- 
+from django.core.cache import cache  # Import the cache module
+from django.shortcuts import render  # Import the render function
+from . models import Item
 
-# Create your views here.
+
 def home(request):
-    return render(request, 'core/home.html')
+    items = Item.objects.all()
+    return render(request, 'core/home.html', {'items': items})
