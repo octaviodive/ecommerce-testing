@@ -40,6 +40,11 @@
           </li>
         {% else %}
           <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:register' %}">
+              <i class="bi bi-person-plus-fill me-1"></i>Register
+            </a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link" href="{% url 'core:login' %}">
               <i class="bi bi-box-arrow-in-right me-1"></i>Login
             </a>
@@ -55,3 +60,4 @@
     </div>
   </div>
 </nav>
+

@@ -4,6 +4,8 @@ from django.views.generic.detail import DetailView
 from . models import Item
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
+from .forms import SignUpForm
+
 
 def home(request):
     items = Item.objects.all()
@@ -33,9 +35,21 @@ def login_user(request):
     else:
         return render(request, 'core/login.html', {})
 
+
 def logout_user(request):
     logout(request)
     messages.success(request, "You have been logged out!")
     return redirect('core:home')
 
-     
+
+def register_user(request):
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Automatically log the user in after registration
+            login(request, user)
+            return redirect('core:home')  # Redirect to the desired page after registration
+    else:
+        form = SignUpForm()
+    return render(request, 'core/register.html', {'form': form})

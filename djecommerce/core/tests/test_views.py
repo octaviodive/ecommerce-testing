@@ -1,6 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
+from core.forms import SignUpForm
 
 class LoginTestCase(TestCase):
 
@@ -33,3 +34,38 @@ class LoginTestCase(TestCase):
         response = self.client.post(reverse('core:login'), login_data)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "There was an error, please try again...")
+        
+
+class UserRegistrationTest(TestCase):
+    
+    def setUp(self):
+        self.register_url = reverse('core:register')
+    
+    def test_registration_page_status_code(self):
+        response = self.client.get(self.register_url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_registration_form(self):
+        response = self.client.get(self.register_url)
+        self.assertIsInstance(response.context['form'], SignUpForm)
+
+    def test_register_user_success(self):
+        data = {
+            'username': 'testuser',
+            'password1': 'testpassword123',
+            'password2': 'testpassword123'
+        }
+        response = self.client.post(self.register_url, data)
+        self.assertEqual(response.status_code, 302)  # Redirect after successful registration
+        self.assertTrue(User.objects.filter(username='testuser').exists())
+
+    def test_register_user_invalid_password(self):
+        data = {
+            'username': 'testuser',
+            'password1': 'testpassword123',
+            'password2': 'differentpassword'
+        }
+        response = self.client.post(self.register_url, data)
+        self.assertEqual(response.status_code, 200)  # Form should re-render with errors
+        self.assertFalse(User.objects.filter(username='testuser').exists())
+
