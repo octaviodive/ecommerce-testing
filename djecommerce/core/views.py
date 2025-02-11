@@ -29,7 +29,7 @@ def login_user(request):
             return redirect('core:home')
         else:
             messages.error(request, ("There was an error, please try again..."))
-            return redirect('core:login')
+            return render(request, 'core/login.html', {})
     else:
         return render(request, 'core/login.html', {})
 
