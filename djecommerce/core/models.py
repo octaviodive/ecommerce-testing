@@ -10,7 +10,6 @@ from django.utils.text import slugify
 from .choices import AddressChoices, CategoryChoices, LabelChoices, enum_to_choices
 from django.core.validators import RegexValidator
 
-
 class UserProfile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

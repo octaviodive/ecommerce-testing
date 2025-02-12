@@ -3,6 +3,8 @@ from .views import (home,
                     login_user,
                     logout_user,
                     register_user,
+                    add_to_cart,
+                    OrderSummaryView,
                      ItemDetailView) 
 
 app_name = 'core'
@@ -13,4 +15,7 @@ urlpatterns = [
     path('login/', login_user, name='login'),
     path('logout/', logout_user, name='logout'),
     path('register/', register_user, name='register'),
+    path('add-to-cart/<slug>/', add_to_cart, name='add-to-cart'),
+    path('order-summary/', OrderSummaryView.as_view(), name='order_summary'),
+
 ]
