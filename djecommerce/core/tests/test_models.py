@@ -12,14 +12,14 @@ from core.choices import AddressChoices, CategoryChoices, LabelChoices, enum_to_
 User = get_user_model()
 class UserProfileModelTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create(username='testuser', password='password123')
+        self.user = User.objects.create_user(username='testuser', password='password123')
         self.user_profile = UserProfile.objects.create(user=self.user)
-    
+
     def test_user_profile_creation(self):
-        user = User.objects.create(username='testuser2', password='password1234')
+        user = User.objects.create_user(username='testuser2', password='password1234')
         user_profile = UserProfile.objects.create(user=user)
         self.assertTrue(isinstance(user_profile, UserProfile))
-        self.assertEqual(user_profile.__str__(), user.username)
+        self.assertEqual(str(user_profile), user.username)
 
     def test_str_method(self):
         self.assertEqual(str(self.user_profile), self.user.username)

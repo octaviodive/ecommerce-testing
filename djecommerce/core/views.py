@@ -1,5 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-#from django.core.cache import cache
+# from django.core.cache import cache
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic.detail import DetailView, View
 from .models import Item, OrderItem, Order
@@ -10,6 +10,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+
+
 def home(request):
     items = Item.objects.all()
     return render(request, 'core/home.html', {'items': items})
@@ -33,7 +35,8 @@ def login_user(request):
             messages.success(request, ("You Have Been Logged In!"))
             return redirect('core:home')
         else:
-            messages.error(request, ("There was an error, please try again..."))
+            messages.error(
+                request, ("There was an error, please try again..."))
             return render(request, 'core/login.html', {})
     else:
         return render(request, 'core/login.html', {})
@@ -52,10 +55,12 @@ def register_user(request):
             user = form.save()
             # Automatically log the user in after registration
             login(request, user)
-            return redirect('core:home')  # Redirect to the desired page after registration
+            # Redirect to the desired page after registration
+            return redirect('core:home')
     else:
         form = SignUpForm()
     return render(request, 'core/register.html', {'form': form})
+
 
 class OrderSummaryView(LoginRequiredMixin, View):
     def get(self, *args, **kwargs):
@@ -68,7 +73,8 @@ class OrderSummaryView(LoginRequiredMixin, View):
         except ObjectDoesNotExist:
             messages.warning(self.request, "You do not have an active order")
             return redirect("/")
-        
+
+
 @login_required
 def add_to_cart(request, slug):
     item = get_object_or_404(Item, slug=slug)
@@ -97,3 +103,31 @@ def add_to_cart(request, slug):
         order.items.add(order_item)
         messages.info(request, "This item was added to your cart.")
         return redirect("core:order_summary")
+
+
+@login_required
+def remove_from_cart(request, slug):
+    item = get_object_or_404(Item, slug=slug)
+    order_qs = Order.objects.filter(
+        user=request.user,
+        ordered=False
+    )
+    if order_qs.exists():
+        order = order_qs[0]
+        # check if the order item is in the order
+        if order.items.filter(item__slug=item.slug).exists():
+            order_item = OrderItem.objects.filter(
+                item=item,
+                user=request.user,
+                ordered=False
+            )[0]
+            order.items.remove(order_item)
+            order_item.delete()
+            messages.info(request, "This item was removed from your cart.")
+            return redirect("core:order_summary")
+        else:
+            messages.info(request, "This item was not in your cart")
+            return redirect("core:item_detail", slug=slug)
+    else:
+        messages.info(request, "You do not have an active order")
+        return redirect("core:item_detail", slug=slug)

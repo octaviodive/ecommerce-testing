@@ -3,8 +3,8 @@
     <a class="navbar-brand d-flex align-items-center" href="{% url 'core:home' %}">
       <i class="bi bi-shop me-2"></i>DJEcommerce
     </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-      aria-expanded="false" aria-label="Toggle navigation">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -18,7 +18,8 @@
           <a class="nav-link" href="#!"><i class="bi bi-info-circle-fill me-1"></i>About</a>
         </li>
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+            aria-expanded="false">
             <i class="bi bi-shop-window me-1"></i>Shop
           </a>
           <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
@@ -33,25 +34,25 @@
       </ul>
       <ul class="navbar-nav ml-auto">
         {% if user.is_authenticated %}
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'core:logout' %}">
-              <i class="bi bi-box-arrow-right me-1"></i>Logout
-            </a>
-          </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'core:logout' %}">
+            <i class="bi bi-box-arrow-right me-1"></i>Logout
+          </a>
+        </li>
         {% else %}
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'core:register' %}">
-              <i class="bi bi-person-plus-fill me-1"></i>Register
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'core:login' %}">
-              <i class="bi bi-box-arrow-in-right me-1"></i>Login
-            </a>
-          </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'core:register' %}">
+            <i class="bi bi-person-plus-fill me-1"></i>Register
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'core:login' %}">
+            <i class="bi bi-box-arrow-in-right me-1"></i>Login
+          </a>
+        </li>
         {% endif %}
         <li class="nav-item">
-          <a class="nav-link" href="#!">
+          <a class="nav-link" href="{% url 'core:order_summary' %}">
             <i class="bi bi-cart-fill me-1"></i>Cart
             <span class="badge bg-dark text-white ms-1 rounded-pill">0</span>
           </a>
@@ -60,4 +61,3 @@
     </div>
   </div>
 </nav>
-
